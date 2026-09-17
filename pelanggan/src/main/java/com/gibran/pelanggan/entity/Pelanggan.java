@@ -1,4 +1,4 @@
-package com.gibran.entity;
+package com.gibran.pelanggan.entity;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;

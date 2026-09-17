@@ -1,4 +1,4 @@
-package com.gibran;
+package com.gibran.pelanggan;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

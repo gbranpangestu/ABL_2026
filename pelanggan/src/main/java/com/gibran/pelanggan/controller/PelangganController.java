@@ -1,7 +1,7 @@
-package com.gibran.controller;
+package com.gibran.pelanggan.controller;
 
-import com.gibran.entity.Pelanggan;
-import com.gibran.service.PelangganService;
+import com.gibran.pelanggan.entity.Pelanggan;
+import com.gibran.pelanggan.service.PelangganService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -10,36 +10,45 @@ import java.util.List;
 @RequestMapping("/pelanggan")
 public class PelangganController {
 
-    private final PelangganService service;
+    private final PelangganService pelangganService;
 
-    public PelangganController(PelangganService service) {
-        this.service = service;
+    public PelangganController(PelangganService pelangganService) {
+        this.pelangganService = pelangganService;
     }
 
+    // CREATE
+    @PostMapping
+    public Pelanggan create(@RequestBody Pelanggan pelanggan) {
+        return pelangganService.create(pelanggan);
+    }
+
+    // READ - Semua pelanggan
     @GetMapping
     public List<Pelanggan> getAll() {
-        return service.getAll();
+        return pelangganService.getAll();
     }
 
+    // READ - Berdasarkan ID
     @GetMapping("/{id}")
     public Pelanggan getById(@PathVariable Long id) {
-        return service.getById(id);
+        return pelangganService.getById(id);
     }
 
-    @PostMapping
-    public Pelanggan save(@RequestBody Pelanggan pelanggan) {
-        return service.save(pelanggan);
-    }
-
+    // UPDATE
     @PutMapping("/{id}")
     public Pelanggan update(
             @PathVariable Long id,
             @RequestBody Pelanggan pelanggan) {
-        return service.update(id, pelanggan);
+
+        return pelangganService.update(id, pelanggan);
     }
 
+    // DELETE
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) {
-        service.delete(id);
+    public String delete(@PathVariable Long id) {
+
+        pelangganService.delete(id);
+
+        return "Pelanggan berhasil dihapus";
     }
-} 
+}

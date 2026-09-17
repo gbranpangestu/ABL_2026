@@ -15,20 +15,25 @@ public class OrderService {
         this.repository = repository;
     }
 
+    // READ - semua data
     public List<Order> getAll() {
         return repository.findAll();
     }
 
+    // READ - berdasarkan ID
     public Order getById(Long id) {
         return repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Order tidak ditemukan"));
     }
 
+    // CREATE
     public Order save(Order order) {
         return repository.save(order);
     }
 
+    // UPDATE
     public Order update(Long id, Order order) {
+
         Order data = getById(id);
 
         data.setProduk_id(order.getProduk_id());
@@ -40,6 +45,7 @@ public class OrderService {
         return repository.save(data);
     }
 
+    // DELETE
     public void delete(Long id) {
         repository.deleteById(id);
     }

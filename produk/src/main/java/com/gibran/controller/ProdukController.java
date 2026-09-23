@@ -28,15 +28,17 @@ public class ProdukController {
     @Autowired
     JenisProdukRepository jenisProdukRepository;
 
-    // =========================
-    // PRODUK
-    // =========================
+
+    // =====================================================
+    // CRUD PRODUK
+    // =====================================================
 
     // GET semua produk
     @GetMapping
     public List<Produk> getAllProduk() {
         return produkRepository.findAll();
     }
+
 
     // GET produk berdasarkan ID
     @GetMapping("/{id}")
@@ -52,15 +54,34 @@ public class ProdukController {
         return ResponseEntity.notFound().build();
     }
 
+
     // POST tambah produk
     @PostMapping
     public ResponseEntity<Produk> createProduk(
             @RequestBody Produk produk) {
 
-        Produk savedProduk = produkRepository.save(produk);
+        // Ambil JenisProduk berdasarkan ID
+        if (produk.getJenisProduk() != null &&
+                produk.getJenisProduk().getId() != null) {
+
+            JenisProduk jenisProduk =
+                    jenisProdukRepository.findById(
+                            produk.getJenisProduk().getId()
+                    ).orElse(null);
+
+            if (jenisProduk == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            produk.setJenisProduk(jenisProduk);
+        }
+
+        Produk savedProduk =
+                produkRepository.save(produk);
 
         return ResponseEntity.ok(savedProduk);
     }
+
 
     // PUT update produk
     @PutMapping("/{id}")
@@ -68,7 +89,8 @@ public class ProdukController {
             @PathVariable Long id,
             @RequestBody Produk produk) {
 
-        Produk produkLama = produkRepository.findById(id).orElse(null);
+        Produk produkLama =
+                produkRepository.findById(id).orElse(null);
 
         if (produkLama == null) {
             return ResponseEntity.notFound().build();
@@ -77,19 +99,37 @@ public class ProdukController {
         produkLama.setNama(produk.getNama());
         produkLama.setDeskripsi(produk.getDeskripsi());
         produkLama.setHarga(produk.getHarga());
-        produkLama.setJenisProduk(produk.getJenisProduk());
 
-        Produk updatedProduk = produkRepository.save(produkLama);
+        // Update jenis produk
+        if (produk.getJenisProduk() != null &&
+                produk.getJenisProduk().getId() != null) {
+
+            JenisProduk jenisProduk =
+                    jenisProdukRepository.findById(
+                            produk.getJenisProduk().getId()
+                    ).orElse(null);
+
+            if (jenisProduk == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            produkLama.setJenisProduk(jenisProduk);
+        }
+
+        Produk updatedProduk =
+                produkRepository.save(produkLama);
 
         return ResponseEntity.ok(updatedProduk);
     }
+
 
     // DELETE produk
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteProduk(
             @PathVariable Long id) {
 
-        Produk produk = produkRepository.findById(id).orElse(null);
+        Produk produk =
+                produkRepository.findById(id).orElse(null);
 
         if (produk == null) {
             return ResponseEntity.notFound().build();
@@ -97,19 +137,22 @@ public class ProdukController {
 
         produkRepository.deleteById(id);
 
-        return ResponseEntity.ok("Produk berhasil dihapus");
+        return ResponseEntity.ok(
+                "Produk berhasil dihapus"
+        );
     }
 
 
-    // =========================
+    // =====================================================
     // JENIS PRODUK
-    // =========================
+    // =====================================================
 
     // GET semua jenis produk
     @GetMapping("/jenisproduk")
     public List<JenisProduk> getAllJenisProduk() {
         return jenisProdukRepository.findAll();
     }
+
 
     // GET jenis produk berdasarkan ID
     @GetMapping("/jenisproduk/{id}")
@@ -126,6 +169,7 @@ public class ProdukController {
         return ResponseEntity.notFound().build();
     }
 
+
     // POST tambah jenis produk
     @PostMapping("/jenisproduk")
     public ResponseEntity<JenisProduk> createJenisProduk(
@@ -136,6 +180,7 @@ public class ProdukController {
 
         return ResponseEntity.ok(savedJenisProduk);
     }
+
 
     // PUT update jenis produk
     @PutMapping("/jenisproduk/{id}")
@@ -160,6 +205,7 @@ public class ProdukController {
         return ResponseEntity.ok(updatedJenisProduk);
     }
 
+
     // DELETE jenis produk
     @DeleteMapping("/jenisproduk/{id}")
     public ResponseEntity<String> deleteJenisProduk(
@@ -174,6 +220,8 @@ public class ProdukController {
 
         jenisProdukRepository.deleteById(id);
 
-        return ResponseEntity.ok("Jenis produk berhasil dihapus");
+        return ResponseEntity.ok(
+                "Jenis produk berhasil dihapus"
+        );
     }
 }

@@ -2,6 +2,10 @@ package com.gibran.order.controller;
 
 import com.gibran.order.entity.Order;
 import com.gibran.order.service.OrderService;
+import com.gibran.order.vo.ResponseTemplate;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -10,36 +14,51 @@ import java.util.List;
 @RequestMapping("/order")
 public class OrderController {
 
-    private final OrderService service;
+    @Autowired
+    private OrderService orderService;
 
-    public OrderController(OrderService service) {
-        this.service = service;
-    }
-
+    // GET semua Order
     @GetMapping
-    public List<Order> getAll() {
-        return service.getAll();
+    public List<Order> getAllOrders() {
+        return orderService.getOrders();
     }
 
+    // GET Order + Produk berdasarkan ID
     @GetMapping("/{id}")
-    public Order getById(@PathVariable Long id) {
-        return service.getById(id);
+    public List<ResponseTemplate> getOrderEntityById(
+            @PathVariable Long id) {
+
+        return orderService.getOrderWithProdukById(id);
     }
 
+    // CREATE
     @PostMapping
-    public Order create(@RequestBody Order order) {
-        return service.save(order);
+    public ResponseEntity<Order> saveOrder(
+            @RequestBody Order order) {
+
+        return ResponseEntity.ok(
+                orderService.saveOrder(order)
+        );
     }
 
+    // UPDATE
     @PutMapping("/{id}")
-    public Order update(
+    public ResponseEntity<Order> updateOrder(
             @PathVariable Long id,
             @RequestBody Order order) {
-        return service.update(id, order);
+
+        return ResponseEntity.ok(
+                orderService.updateOrder(id, order)
+        );
     }
 
+    // DELETE
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) {
-        service.delete(id);
+    public ResponseEntity<Void> deleteOrder(
+            @PathVariable Long id) {
+
+        orderService.deleteOrder(id);
+
+        return ResponseEntity.noContent().build();
     }
 }

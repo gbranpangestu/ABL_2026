@@ -1,3 +1,4 @@
+
 package com.gibran.order.service;
 
 import com.gibran.order.entity.Order;
@@ -24,9 +25,58 @@ public class OrderService {
     @Autowired
     private DiscoveryClient discoveryClient;
 
-    // GET semua Order
-    public List<Order> getOrders() {
-        return orderRepository.findAll();
+    // GET semua Order + Produk + Pelanggan
+    public List<ResponseTemplate> getOrders() {
+
+        List<ResponseTemplate> responseList = new ArrayList<>();
+        List<Order> orders = orderRepository.findAll();
+
+        RestTemplate restTemplate = new RestTemplate();
+
+        List<ServiceInstance> produkInstances =
+                discoveryClient.getInstances("PRODUK");
+
+        List<ServiceInstance> pelangganInstances =
+                discoveryClient.getInstances("PELANGGAN");
+
+        if (produkInstances.isEmpty()) {
+            throw new RuntimeException(
+                    "Service PRODUK tidak ditemukan di Eureka");
+        }
+
+        if (pelangganInstances.isEmpty()) {
+            throw new RuntimeException(
+                    "Service PELANGGAN tidak ditemukan di Eureka");
+        }
+
+        ServiceInstance produkInstance = produkInstances.get(0);
+        ServiceInstance pelangganInstance = pelangganInstances.get(0);
+
+        for (Order order : orders) {
+
+            Produk produk = restTemplate.getForObject(
+                    produkInstance.getUri()
+                            + "/api/produk/"
+                            + order.getProduk_id(),
+                    Produk.class
+            );
+
+            Pelanggan pelanggan = restTemplate.getForObject(
+                    pelangganInstance.getUri()
+                            + "/api/pelanggan/"
+                            + order.getPelanggan_id(),
+                    Pelanggan.class
+            );
+
+            ResponseTemplate response = new ResponseTemplate();
+            response.setOrder(order);
+            response.setProduk(produk);
+            response.setPelanggan(pelanggan);
+
+            responseList.add(response);
+        }
+
+        return responseList;
     }
 
     // GET Order berdasarkan ID
@@ -36,72 +86,52 @@ public class OrderService {
                         new RuntimeException("Order tidak ditemukan"));
     }
 
-    // GET Order + Produk + Pelanggan
-    public List<ResponseTemplate> getOrderWithProdukById(Long id) {
-
-        List<ResponseTemplate> responseList = new ArrayList<>();
+    // GET satu Order + Produk + Pelanggan
+    public ResponseTemplate getOrderWithProdukById(Long id) {
 
         Order order = getOrderById(id);
 
-        // Membuat RestTemplate
         RestTemplate restTemplate = new RestTemplate();
 
-        // =========================
-        // MENCARI SERVICE PRODUK
-        // =========================
         List<ServiceInstance> produkInstances =
                 discoveryClient.getInstances("PRODUK");
+
+        List<ServiceInstance> pelangganInstances =
+                discoveryClient.getInstances("PELANGGAN");
 
         if (produkInstances.isEmpty()) {
             throw new RuntimeException(
                     "Service PRODUK tidak ditemukan di Eureka");
         }
 
-        ServiceInstance produkServiceInstance =
-                produkInstances.get(0);
-
-        // Mengambil data Produk
-        Produk produk = restTemplate.getForObject(
-                produkServiceInstance.getUri()
-                        + "/api/produk/"
-                        + order.getProduk_id(),
-                Produk.class
-        );
-
-        // =========================
-        // MENCARI SERVICE PELANGGAN
-        // =========================
-        List<ServiceInstance> pelangganInstances =
-                discoveryClient.getInstances("PELANGGAN");
-
         if (pelangganInstances.isEmpty()) {
             throw new RuntimeException(
                     "Service PELANGGAN tidak ditemukan di Eureka");
         }
 
-        ServiceInstance pelangganServiceInstance =
-                pelangganInstances.get(0);
+        ServiceInstance produkInstance = produkInstances.get(0);
+        ServiceInstance pelangganInstance = pelangganInstances.get(0);
 
-        // Mengambil data Pelanggan
+        Produk produk = restTemplate.getForObject(
+                produkInstance.getUri()
+                        + "/api/produk/"
+                        + order.getProduk_id(),
+                Produk.class
+        );
+
         Pelanggan pelanggan = restTemplate.getForObject(
-                pelangganServiceInstance.getUri()
-                        + "/pelanggan/"
+                pelangganInstance.getUri()
+                        + "/api/pelanggan/"
                         + order.getPelanggan_id(),
                 Pelanggan.class
         );
 
-        // =========================
-        // GABUNGKAN DATA
-        // =========================
-        ResponseTemplate vo = new ResponseTemplate();
+        ResponseTemplate response = new ResponseTemplate();
+        response.setOrder(order);
+        response.setProduk(produk);
+        response.setPelanggan(pelanggan);
 
-        vo.setOrder(order);
-        vo.setProduk(produk);
-        vo.setPelanggan(pelanggan);
-
-        responseList.add(vo);
-
-        return responseList;
+        return response;
     }
 
     // CREATE
@@ -109,7 +139,6 @@ public class OrderService {
 
         RestTemplate restTemplate = new RestTemplate();
 
-        // Mencari service PRODUK melalui Eureka
         List<ServiceInstance> instances =
                 discoveryClient.getInstances("PRODUK");
 
@@ -118,22 +147,19 @@ public class OrderService {
                     "Service PRODUK tidak ditemukan di Eureka");
         }
 
-        ServiceInstance produkServiceInstance =
-                instances.get(0);
-
-        // Mengambil data Produk
         Produk produk = restTemplate.getForObject(
-                produkServiceInstance.getUri()
+                instances.get(0).getUri()
                         + "/api/produk/"
                         + order.getProduk_id(),
                 Produk.class
         );
 
-        // Harga Produk x Jumlah
-        Double total =
-                produk.getHarga() * order.getJumlah();
+        if (produk == null || produk.getHarga() == null) {
+            throw new RuntimeException(
+                    "Data atau harga Produk tidak ditemukan");
+        }
 
-        // Menyimpan hasil perhitungan ke total
+        Double total = produk.getHarga() * order.getJumlah();
         order.setTotal(total);
 
         return orderRepository.save(order);
@@ -149,7 +175,6 @@ public class OrderService {
         data.setTanggal(order.getTanggal());
         data.setJumlah(order.getJumlah());
 
-        // Total akan dihitung berdasarkan harga produk
         RestTemplate restTemplate = new RestTemplate();
 
         List<ServiceInstance> instances =
@@ -160,19 +185,19 @@ public class OrderService {
                     "Service PRODUK tidak ditemukan di Eureka");
         }
 
-        ServiceInstance produkServiceInstance =
-                instances.get(0);
-
         Produk produk = restTemplate.getForObject(
-                produkServiceInstance.getUri()
+                instances.get(0).getUri()
                         + "/api/produk/"
                         + data.getProduk_id(),
                 Produk.class
         );
 
-        Double total =
-                produk.getHarga() * data.getJumlah();
+        if (produk == null || produk.getHarga() == null) {
+            throw new RuntimeException(
+                    "Data atau harga Produk tidak ditemukan");
+        }
 
+        Double total = produk.getHarga() * data.getJumlah();
         data.setTotal(total);
 
         return orderRepository.save(data);
@@ -182,7 +207,6 @@ public class OrderService {
     public void deleteOrder(Long id) {
 
         Order data = getOrderById(id);
-
         orderRepository.delete(data);
     }
 }

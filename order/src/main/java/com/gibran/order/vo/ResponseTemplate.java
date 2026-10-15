@@ -1,17 +1,21 @@
+
 package com.gibran.order.vo;
 
 import com.gibran.order.entity.Order;
 
 public class ResponseTemplate {
 
-    Order order;
-    Produk produk;
-    Pelanggan pelanggan;
+    private Order order;
+    private Produk produk;
+    private Pelanggan pelanggan;
 
     public ResponseTemplate() {
     }
 
-    public ResponseTemplate(Order order, Produk produk, Pelanggan pelanggan) {
+    public ResponseTemplate(
+            Order order,
+            Produk produk,
+            Pelanggan pelanggan) {
         this.order = order;
         this.produk = produk;
         this.pelanggan = pelanggan;
